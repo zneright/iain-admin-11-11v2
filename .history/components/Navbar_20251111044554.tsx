@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { collection, getDocs, orderBy, query, limit, doc, updateDoc, where } from "firebase/firestore";
-import { db } from "../firebase";
+import { db } from "../../../firebase";
 
 import { Bell } from "lucide-react";
 import Image from "next/image";

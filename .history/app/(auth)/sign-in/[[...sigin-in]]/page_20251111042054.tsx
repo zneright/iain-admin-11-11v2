@@ -7,7 +7,7 @@ import Link from "next/link";
 // -------------------------------------------------------------------------
 import { signInWithEmailAndPassword } from "firebase/auth";
 // NOTE: Path adjusted from previous conversation history
-import { auth } from "../../../../firebase";
+import { auth } from "../../../../../components/firebase";
 // -------------------------------------------------------------------------
 
 // Assuming these icons are available in your system setup

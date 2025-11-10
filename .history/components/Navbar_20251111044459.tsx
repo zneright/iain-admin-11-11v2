@@ -1,16 +1,23 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+// -------------------------------------------------------------------------
+// FIREBASE IMPORTS
+// -------------------------------------------------------------------------
 import { collection, getDocs, orderBy, query, limit, doc, updateDoc, where } from "firebase/firestore";
+// Removed onAuthStateChanged, signOut imports as they are no longer used
 import { db } from "../firebase";
+// -------------------------------------------------------------------------
 
 import { Bell } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import MobileNav from "./MobileNav";
 
+// ⭐ CRITICAL: Define the specific UID for which notifications should be fetched
 const STATIC_TARGET_UID = "qkCOgryeaJTPJLyT4B5BXRrZczO2";
 
+// Interface for the notification items
 interface Notification {
   id: string;
   title: string;
@@ -19,6 +26,7 @@ interface Notification {
   createdAt: Date;
 }
 
+// Helper function to format time ago
 const formatTimeAgo = (timestamp: Date) => {
   if (isNaN(timestamp.getTime())) return 'N/A';
   const seconds = Math.floor((new Date().getTime() - timestamp.getTime()) / 1000);
@@ -37,13 +45,19 @@ const Navbar = () => {
   const [loading, setLoading] = useState(true);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // currentUser state management removed
+
   const unreadCount = notifications.filter(n => !n.read).length;
 
+  // =================================================================
+  // 🎯 FIREBASE FETCH LOGIC (Filters by STATIC UID)
+  // =================================================================
   const fetchNotifications = async () => {
     setLoading(true);
     const userId = STATIC_TARGET_UID;
 
     try {
+      // CRITICAL: Filter notifications where targetUid matches the static ID
       const notifQuery = query(
         collection(db, "notifications"),
         where("targetUid", "==", userId),
@@ -75,11 +89,13 @@ const Navbar = () => {
     }
   };
 
+  // ⭐ Trigger fetch only once on mount
   useEffect(() => {
     fetchNotifications();
   }, []);
 
 
+  // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -93,6 +109,7 @@ const Navbar = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Handle marking a notification as read
   const handleNotificationClick = async (notifId: string) => {
     setIsOpen(false);
 
@@ -108,13 +125,16 @@ const Navbar = () => {
     }
   };
 
+  // Handle Sign Out (Now just a forced redirect since auth state is ignored)
   const handleSignOut = () => {
+    // No Firebase sign out logic needed here, just redirecting the user
     window.location.href = '/sign-in';
   };
 
 
   return (
     <nav className="flex-between fixed z-50 w-full bg-dark-1 px-6 py-4 lg:px-10">
+      {/* Logo */}
       <Link href="/" className="flex items-center gap-1">
         <Image
           src="/icons/logo.svg"
@@ -135,6 +155,7 @@ const Navbar = () => {
             className={`relative rounded-full p-2 text-white transition hover:bg-dark-2 max-sm:hidden`}
           >
             <Bell size={22} />
+            {/* Red dot indicator: visible if there are any unread notifications */}
             {unreadCount > 0 && (
               <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-red-500 border-2 border-dark-1" />
             )}

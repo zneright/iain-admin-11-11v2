@@ -1,13 +1,9 @@
-"use client";
-
 import { useState, FormEvent, ChangeEvent } from "react";
-import Link from "next/link";
 // -------------------------------------------------------------------------
 // FIREBASE IMPORTS
 // -------------------------------------------------------------------------
 import { signInWithEmailAndPassword } from "firebase/auth";
-// NOTE: Path adjusted from previous conversation history
-import { auth } from "../../../../firebase";
+import { auth } from "../../firebase"; // Adjust path if necessary
 // -------------------------------------------------------------------------
 
 // Assuming these icons are available in your system setup
@@ -47,10 +43,11 @@ export default function SignInPage() {
     setLoading(true);
 
     try {
-      // Firebase Authentication: Sign In
+      // ⭐ Firebase Authentication: Sign In
       await signInWithEmailAndPassword(auth, email, password);
 
       // Redirect user after successful sign-in
+      // NOTE: Replace with your actual dashboard route
       window.location.href = '/';
 
     } catch (authError: any) {
@@ -66,8 +63,6 @@ export default function SignInPage() {
         case "auth/too-many-requests":
           errorMessage = "Too many login attempts. Try again later.";
           break;
-        default:
-          errorMessage = authError.message;
       }
       setError(errorMessage);
     } finally {
@@ -76,18 +71,14 @@ export default function SignInPage() {
   };
 
   return (
-    <main className="flex h-screen w-full items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
-      <div className="w-full max-w-lg p-8 space-y-8 bg-white rounded-2xl shadow-xl border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
-
-        {/* Header/Branding */}
-        <div className="text-center space-y-2">
-          <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white">
-            Welcome Back
-          </h1>
-          <p className="text-lg text-gray-500 dark:text-gray-400">
-            Sign in to access the IAIN Admin Dashboard
-          </p>
-        </div>
+    <main className="flex h-screen w-full items-center justify-center bg-gray-100 dark:bg-gray-900">
+      <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-2xl dark:bg-gray-800">
+        <h1 className="text-3xl font-extrabold text-center text-gray-900 dark:text-white">
+          Sign In to IAIN Admin
+        </h1>
+        <p className="text-center text-gray-500 dark:text-gray-400">
+          Use your registered email and password.
+        </p>
 
         <form onSubmit={handleSignIn} className="space-y-6">
           {/* Error Message Display */}
@@ -114,8 +105,8 @@ export default function SignInPage() {
                 value={email}
                 onChange={handleEmailChange}
                 disabled={loading}
-                className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg transition duration-150 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white placeholder:text-gray-400"
-                placeholder="Enter your email"
+                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                placeholder="you@example.com"
               />
             </div>
           </div>
@@ -137,7 +128,7 @@ export default function SignInPage() {
                 value={password}
                 onChange={handlePasswordChange}
                 disabled={loading}
-                className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg transition duration-150 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white placeholder:text-gray-400"
+                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 placeholder="••••••••"
               />
             </div>
@@ -147,16 +138,16 @@ export default function SignInPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-md text-base font-semibold text-white bg-brand-500 hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 disabled:bg-brand-400/80 transition duration-150"
+            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 disabled:bg-brand-400 dark:bg-brand-700 dark:hover:bg-brand-600 dark:focus:ring-brand-400"
           >
-            {loading ? 'Authenticating...' : 'Sign In'}
+            {loading ? 'Signing In...' : 'Sign In'}
           </button>
         </form>
 
         {/* Optional: Link to Sign Up */}
-        <div className="text-center pt-4">
+        <div className="text-center">
           <Link href="/signup" className="text-sm font-medium text-brand-600 hover:text-brand-500 dark:text-brand-400 dark:hover:text-brand-300">
-            Don't have an account? Create one
+            Don't have an account? Sign up
           </Link>
         </div>
       </div>

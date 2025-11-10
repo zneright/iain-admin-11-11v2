@@ -1,16 +1,21 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+// -------------------------------------------------------------------------
+// FIREBASE IMPORTS
+// -------------------------------------------------------------------------
 import { collection, getDocs, orderBy, query, limit, doc, updateDoc, where } from "firebase/firestore";
+// NOTE: Assuming db is correctly configured and exported from root firebase setup
 import { db } from "../firebase";
+// -------------------------------------------------------------------------
 
 import { Bell } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { SignedIn, UserButton } from "@clerk/nextjs";
 import MobileNav from "./MobileNav";
 
-const STATIC_TARGET_UID = "qkCOgryeaJTPJLyT4B5BXRrZczO2";
-
+// Interface for the notification items
 interface Notification {
   id: string;
   title: string;
@@ -19,6 +24,7 @@ interface Notification {
   createdAt: Date;
 }
 
+// Helper function to format time ago
 const formatTimeAgo = (timestamp: Date) => {
   if (isNaN(timestamp.getTime())) return 'N/A';
   const seconds = Math.floor((new Date().getTime() - timestamp.getTime()) / 1000);
@@ -37,17 +43,19 @@ const Navbar = () => {
   const [loading, setLoading] = useState(true);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // Determine unread status for the red dot indicator
   const unreadCount = notifications.filter(n => !n.read).length;
 
+  // =================================================================
+  // 🎯 FIREBASE FETCH LOGIC (Focus on UNREAD for high priority)
+  // =================================================================
   const fetchNotifications = async () => {
     setLoading(true);
-    const userId = STATIC_TARGET_UID;
-
     try {
+      // Query the latest 5 UNREAD notifications
       const notifQuery = query(
         collection(db, "notifications"),
-        where("targetUid", "==", userId),
-        where("read", "==", false),
+        where("read", "==", false), // Fetch only UNREAD
         orderBy("createdAt", "desc"),
         limit(5)
       );
@@ -70,16 +78,18 @@ const Navbar = () => {
       setNotifications(fetchedNotifs);
     } catch (err) {
       console.error("Error fetching header notifications:", err);
+      // Silent fail for non-critical header element
     } finally {
       setLoading(false);
     }
   };
 
+  // Fetch data when component mounts
   useEffect(() => {
     fetchNotifications();
   }, []);
 
-
+  // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -93,28 +103,29 @@ const Navbar = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Handle marking a notification as read and closing the dropdown
   const handleNotificationClick = async (notifId: string) => {
-    setIsOpen(false);
+    setIsOpen(false); // Close dropdown immediately
 
+    // Optimistically update local state
     setNotifications(prev =>
       prev.map(n => (n.id === notifId ? { ...n, read: true } : n))
     );
 
+    // Update Firestore in the background
     try {
       const notifDocRef = doc(db, "notifications", notifId);
       await updateDoc(notifDocRef, { read: true });
     } catch (error) {
       console.error("Failed to mark notification as read in DB:", error);
+      // NOTE: Error handling for local state reversal omitted for simplicity
     }
-  };
-
-  const handleSignOut = () => {
-    window.location.href = '/sign-in';
   };
 
 
   return (
     <nav className="flex-between fixed z-50 w-full bg-dark-1 px-6 py-4 lg:px-10">
+      {/* Logo */}
       <Link href="/" className="flex items-center gap-1">
         <Image
           src="/icons/logo.svg"
@@ -132,9 +143,10 @@ const Navbar = () => {
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className={`relative rounded-full p-2 text-white transition hover:bg-dark-2 max-sm:hidden`}
+            className="relative rounded-full p-2 text-white transition hover:bg-dark-2 max-sm:hidden"
           >
             <Bell size={22} />
+            {/* Red dot indicator: visible if there are any unread notifications */}
             {unreadCount > 0 && (
               <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-red-500 border-2 border-dark-1" />
             )}
@@ -146,6 +158,7 @@ const Navbar = () => {
                 <p className="text-sm font-semibold text-white">
                   Notifications ({unreadCount} new)
                 </p>
+                {/* Button to View All - Could also include Mark All as Read button */}
               </div>
 
               <ul className="max-h-60 overflow-y-auto text-sm text-gray-300">
@@ -179,19 +192,9 @@ const Navbar = () => {
           )}
         </div>
 
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleSignOut}
-            className="p-2 rounded-full text-white bg-red-600 hover:bg-red-700 transition"
-            title="Sign Out"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-              <polyline points="16 17 21 12 16 7"></polyline>
-              <line x1="21" y1="12" x2="9" y2="12"></line>
-            </svg>
-          </button>
-        </div>
+        <SignedIn>
+          <UserButton afterSignOutUrl="/sign-in" />
+        </SignedIn>
 
         <MobileNav />
       </div>
