@@ -20,15 +20,15 @@ export const sidebarLinks = [
     route: '/recordings',
     label: 'Recordings',
   },
-
-  {
+  
+    {
     imgURL: '/icons/resume.svg',
     route: '/insert-resume',
     label: 'Resume',
   },
 
   {
-    imgURL: '/icons/calendar.svg',
+    imgURL:'/icons/calendar.svg',
     route: '/calendar',
     label: 'Calendar',
   },

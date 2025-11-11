@@ -3,31 +3,27 @@
 import { useState, FormEvent, ChangeEvent, useEffect } from "react";
 import { signInWithEmailAndPassword, signInAnonymously, signInWithCustomToken, setPersistence, browserSessionPersistence, getAuth } from "firebase/auth";
 import { initializeApp } from 'firebase/app';
-import { setLogLevel } from "firebase/firestore"; // Import setLogLevel
 
-// Set log level for Firebase services
-setLogLevel('debug');
-
-// --- CONFIGURATION UPDATE ---
+// --- CONFIGURATION UPDATE (Using values from your firebase.js) ---
 const defaultFirebaseConfig = {
-  // Retaining the provided fallback configuration structure
+  // Actual API Key from firebase.js
   apiKey: "AIzaSyBVVzJHj2a8z8DEjBAGuvO4zc8fjrm92N8",
   authDomain: "iain-f7c30.firebaseapp.com",
   projectId: "iain-f7c30",
   storageBucket: "iain-f7c30.firebasestorage.app",
   messagingSenderId: "854098983635",
   appId: "1:854098983635:web:30a821bfed2ada47093226",
+  // measurementId is optional for auth but included for completeness
   measurementId: "G-4BRVSXBWKJ",
 };
 
 // The configuration object is sourced from the Canvas environment, using the correct configuration as a fallback
-// We use the global variable __firebase_config which is provided by the environment
 const firebaseConfig = typeof __firebase_config !== 'undefined'
   ? JSON.parse(__firebase_config)
   : defaultFirebaseConfig;
+// --- END CONFIGURATION UPDATE ---
 
-// FIX: Correctly access the global variable __initial_auth_token without using window
-const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+const initialAuthToken = typeof (window as any).__initial_auth_token !== 'undefined' ? (window as any).__initial_auth_token : null;
 
 // Initialize Firebase App
 const app = initializeApp(firebaseConfig);
@@ -68,20 +64,14 @@ const App = () => {
     setIsConfigValid(true);
 
     const initAuth = async () => {
-      // Check if 'auth' is null or if running in an environment where persistence is not available (like a server)
-      if (!auth || typeof window === "undefined") {
-        setIsAuthReady(true);
-        return;
-      }
+      if (!auth || typeof window === "undefined") return;
 
       try {
         await setPersistence(auth, browserSessionPersistence);
 
         if (initialAuthToken) {
-          console.log("Signing in with Custom Token...");
           await signInWithCustomToken(auth, initialAuthToken);
         } else {
-          console.log("Signing in Anonymously...");
           await signInAnonymously(auth);
         }
       } catch (e: any) {
@@ -90,10 +80,7 @@ const App = () => {
         if (e.code === 'auth/invalid-api-key') {
           setError("Configuration Error: Firebase API Key is invalid. Check your setup.");
         } else {
-          // Only set error if it's not the case where user is already signed in anonymously
-          if (e.code !== 'auth/already-signed-in') {
-            setError("Authentication initialization failed: " + e.message);
-          }
+          setError("Authentication initialization failed: " + e.message);
         }
       } finally {
         setIsAuthReady(true);
@@ -138,16 +125,12 @@ const App = () => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
 
-      // --- SUCCESS: Redirect to home page ---
-      // In a real Next.js app, you'd use router.push, but for a single-file React component in a simplified environment, window.location is often used.
-      console.log("Sign-in successful. Redirecting...");
-      // Note: Actual redirection logic is dependent on the host environment
-      // window.location.href = "/"; 
+      // Removed automatic redirect as requested
 
-      // Instead of an immediate redirect, show a success message as a feedback mechanism
-      setError("Sign-in Success! (Redirect logic would execute here)");
+      setError("Success: You are now signed in!");
       setLoading(false);
-      // ------------------------------------
+      setEmail('');
+      setPassword('');
 
     } catch (err: any) {
       let msg = "Sign-in failed.";
@@ -167,7 +150,7 @@ const App = () => {
           msg = err.message || msg;
       }
       setError(msg);
-      setLoading(false); // Stop loading if sign-in fails
+      setLoading(false);
     }
   };
 

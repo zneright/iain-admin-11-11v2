@@ -3,31 +3,10 @@
 import { useState, FormEvent, ChangeEvent, useEffect } from "react";
 import { signInWithEmailAndPassword, signInAnonymously, signInWithCustomToken, setPersistence, browserSessionPersistence, getAuth } from "firebase/auth";
 import { initializeApp } from 'firebase/app';
-import { setLogLevel } from "firebase/firestore"; // Import setLogLevel
 
-// Set log level for Firebase services
-setLogLevel('debug');
-
-// --- CONFIGURATION UPDATE ---
-const defaultFirebaseConfig = {
-  // Retaining the provided fallback configuration structure
-  apiKey: "AIzaSyBVVzJHj2a8z8DEjBAGuvO4zc8fjrm92N8",
-  authDomain: "iain-f7c30.firebaseapp.com",
-  projectId: "iain-f7c30",
-  storageBucket: "iain-f7c30.firebasestorage.app",
-  messagingSenderId: "854098983635",
-  appId: "1:854098983635:web:30a821bfed2ada47093226",
-  measurementId: "G-4BRVSXBWKJ",
-};
-
-// The configuration object is sourced from the Canvas environment, using the correct configuration as a fallback
-// We use the global variable __firebase_config which is provided by the environment
-const firebaseConfig = typeof __firebase_config !== 'undefined'
-  ? JSON.parse(__firebase_config)
-  : defaultFirebaseConfig;
-
-// FIX: Correctly access the global variable __initial_auth_token without using window
-const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+// Ensure the necessary global variables are available or default them
+const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { projectId: 'demo-project' };
+const initialAuthToken = typeof (window as any).__initial_auth_token !== 'undefined' ? (window as any).__initial_auth_token : null;
 
 // Initialize Firebase App
 const app = initializeApp(firebaseConfig);
@@ -52,49 +31,23 @@ const App = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
-  const [isConfigValid, setIsConfigValid] = useState(true);
 
   // Initialize auth persistence & anonymous sign-in
   useEffect(() => {
-    // Explicit check for a required configuration item (API Key)
-    if (!firebaseConfig.apiKey || firebaseConfig.apiKey.length < 10) {
-      const configErrorMsg = "Configuration Error: Firebase API Key is missing or invalid. Please ensure the environment provides a complete Firebase configuration.";
-      setError(configErrorMsg);
-      console.error(configErrorMsg);
-      setIsAuthReady(true);
-      setIsConfigValid(false);
-      return;
-    }
-    setIsConfigValid(true);
-
     const initAuth = async () => {
-      // Check if 'auth' is null or if running in an environment where persistence is not available (like a server)
-      if (!auth || typeof window === "undefined") {
-        setIsAuthReady(true);
-        return;
-      }
+      if (!auth || typeof window === "undefined") return;
 
       try {
         await setPersistence(auth, browserSessionPersistence);
 
         if (initialAuthToken) {
-          console.log("Signing in with Custom Token...");
           await signInWithCustomToken(auth, initialAuthToken);
         } else {
-          console.log("Signing in Anonymously...");
           await signInAnonymously(auth);
         }
-      } catch (e: any) {
+      } catch (e) {
         console.error("Auth Initialization Error:", e);
-        // Catch the explicit invalid-api-key error on initialization
-        if (e.code === 'auth/invalid-api-key') {
-          setError("Configuration Error: Firebase API Key is invalid. Check your setup.");
-        } else {
-          // Only set error if it's not the case where user is already signed in anonymously
-          if (e.code !== 'auth/already-signed-in') {
-            setError("Authentication initialization failed: " + e.message);
-          }
-        }
+        setError("Authentication initialization failed.");
       } finally {
         setIsAuthReady(true);
       }
@@ -117,12 +70,6 @@ const App = () => {
     e.preventDefault();
     setError(null);
 
-    // Disable sign-in if configuration is known to be bad
-    if (!isConfigValid) {
-      setError("Configuration Error: Cannot sign in due to an invalid Firebase API Key.");
-      return;
-    }
-
     if (!isAuthReady || !auth) {
       setError("Authentication service is not ready.");
       return;
@@ -138,16 +85,12 @@ const App = () => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
 
-      // --- SUCCESS: Redirect to home page ---
-      // In a real Next.js app, you'd use router.push, but for a single-file React component in a simplified environment, window.location is often used.
-      console.log("Sign-in successful. Redirecting...");
-      // Note: Actual redirection logic is dependent on the host environment
-      // window.location.href = "/"; 
+      // *** REMOVED AUTOMATIC REDIRECT (window.location.href = "/";) ***
 
-      // Instead of an immediate redirect, show a success message as a feedback mechanism
-      setError("Sign-in Success! (Redirect logic would execute here)");
+      setError("Success: You are now signed in!");
       setLoading(false);
-      // ------------------------------------
+      setEmail('');
+      setPassword('');
 
     } catch (err: any) {
       let msg = "Sign-in failed.";
@@ -160,31 +103,24 @@ const App = () => {
         case "auth/too-many-requests":
           msg = "Too many login attempts. Try again later.";
           break;
-        case "auth/invalid-api-key":
-          msg = "Configuration Error: Firebase API Key is invalid. Check your setup.";
-          break;
         default:
           msg = err.message || msg;
       }
       setError(msg);
-      setLoading(false); // Stop loading if sign-in fails
+      setLoading(false);
     }
   };
 
-  const isSuccess = error && error.includes("Success");
-  const errorClass = isSuccess
+  const errorClass = error && error.includes("Success")
     ? 'text-green-700 bg-green-100 border-green-300 dark:bg-green-900/50 dark:text-green-300'
     : 'text-red-700 bg-red-100 border-red-300 dark:bg-red-900/50 dark:text-red-300';
-
-  // The form is disabled if loading, not ready, or configuration is invalid
-  const isDisabled = loading || !isAuthReady || !isConfigValid;
 
   return (
     <main className="flex h-screen w-full items-center justify-center bg-gray-50 dark:bg-gray-900 px-4 font-inter">
       <div className="w-full max-w-lg p-8 space-y-8 bg-white rounded-2xl shadow-xl border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
 
         <div className="text-center space-y-2">
-          <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white">Sign In</h1>
+          <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white">Admin Sign In</h1>
           <p className="text-lg text-gray-500 dark:text-gray-400">Please sign in to continue.</p>
         </div>
 
@@ -210,7 +146,7 @@ const App = () => {
                 type="email"
                 value={email}
                 onChange={handleEmailChange}
-                disabled={isDisabled}
+                disabled={loading || !isAuthReady}
                 required
                 className="w-full pl-10 pr-3 py-2.5 border rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white placeholder:text-gray-400 disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-700"
                 placeholder="Enter your email"
@@ -227,7 +163,7 @@ const App = () => {
                 type="password"
                 value={password}
                 onChange={handlePasswordChange}
-                disabled={isDisabled}
+                disabled={loading || !isAuthReady}
                 required
                 className="w-full pl-10 pr-3 py-2.5 border rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white placeholder:text-gray-400 disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-700"
                 placeholder="••••••••"
@@ -237,12 +173,14 @@ const App = () => {
 
           <button
             type="submit"
-            disabled={isDisabled}
+            disabled={loading || !isAuthReady}
             className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-md text-base font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-400/80 transition duration-150"
           >
-            {isConfigValid ? (loading ? 'Authenticating...' : 'Sign In') : 'Config Error'}
+            {loading ? 'Authenticating...' : 'Sign In'}
           </button>
         </form>
+
+        {/* *** REMOVED SIGN-UP LINK AS REQUESTED *** */}
 
       </div>
     </main>

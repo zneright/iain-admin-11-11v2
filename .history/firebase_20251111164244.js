@@ -27,4 +27,3 @@ export const app = typeof window !== "undefined"
 export const analytics = app ? getAnalytics(app) : null;
 export const auth = app ? getAuth(app) : null;
 export const db = app ? getFirestore(app) : null;
-    
