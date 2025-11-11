@@ -2,8 +2,15 @@
 
 import { useState, FormEvent, ChangeEvent } from "react";
 import Link from "next/link";
+// -------------------------------------------------------------------------
+// FIREBASE IMPORTS
+// -------------------------------------------------------------------------
 import { signInWithEmailAndPassword } from "firebase/auth";
+// NOTE: Path adjusted from previous conversation history
 import { auth } from "../../../../firebase";
+// -------------------------------------------------------------------------
+
+// Assuming these icons are available in your system setup
 const UserIcon = ({ className = "w-5 h-5" }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
 );
@@ -40,6 +47,7 @@ export default function SignInPage() {
     setLoading(true);
 
     try {
+      // Firebase Authentication: Sign In
       await signInWithEmailAndPassword(auth, email, password);
 
       window.location.href = '/';
@@ -144,7 +152,12 @@ export default function SignInPage() {
           </button>
         </form>
 
-
+        {/* Optional: Link to Sign Up */}
+        <div className="text-center pt-4">
+          <Link href="/signup" className="text-sm font-medium text-brand-600 hover:text-brand-500 dark:text-brand-400 dark:hover:text-brand-300">
+            Don't have an account? Create one
+          </Link>
+        </div>
       </div>
     </main>
   );

@@ -144,7 +144,12 @@ export default function SignInPage() {
           </button>
         </form>
 
-
+        {/* Optional: Link to Sign Up */}
+        <div className="text-center pt-4">
+          <Link href="/signup" className="text-sm font-medium text-brand-600 hover:text-brand-500 dark:text-brand-400 dark:hover:text-brand-300">
+            Don't have an account? Create one
+          </Link>
+        </div>
       </div>
     </main>
   );
